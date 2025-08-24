@@ -2,7 +2,7 @@
     "name": "dalal/gain-love-api",
     "autoload": {
         "psr-4": {
-            "Dalal\\GainLoveApi\\": "src/"
+            "App\\": "app/"
         }
     },
     "authors": [
