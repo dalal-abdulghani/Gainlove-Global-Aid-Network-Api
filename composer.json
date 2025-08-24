@@ -1,0 +1,15 @@
+{
+    "name": "dalal/gain-love-api",
+    "autoload": {
+        "psr-4": {
+            "Dalal\\GainLoveApi\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "dalal-abdulghani",
+            "email": "dalal.m.abdulghani@gmail.com"
+        }
+    ],
+    "require": {}
+}
