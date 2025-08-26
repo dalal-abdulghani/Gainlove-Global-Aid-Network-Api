@@ -24,10 +24,17 @@ class MessageController extends BaseController {
         }
     }
 
-    public function store($data) {
-        $this->model->createMessage($data['name'], $data['phone'], $data['email'], $data['question']);
-        $this->respond(['message' => 'Message created'], 201);
-    }
+public function store($data) {
+    $this->model->createMessage(
+        $data['name'] ?? null,
+        $data['phone'] ?? null,
+        $data['email'] ?? null,
+        $data['question'] ?? null
+    );
+
+    $this->respond(['message' => 'Message created'], 201);
+}
+
 
     public function update($id, $data) {
         $this->model->update($id, $data);

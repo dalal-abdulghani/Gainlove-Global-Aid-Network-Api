@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Models\Partner;
+use App\Core\Logger;
 
 class PartnerController extends BaseController {
     private $model;
@@ -11,31 +12,98 @@ class PartnerController extends BaseController {
     }
 
     public function index() {
-        $partners = $this->model->all();
-        $this->respond($partners);
+        try {
+            $partners = $this->model->all();
+            $this->respond($partners);
+        } catch (\Exception $e) {
+            Logger::error("Failed to fetch partners: " . $e->getMessage());
+            $this->respond(['message' => 'Server error'], 500);
+        }
     }
 
     public function show($id) {
-        $partner = $this->model->find($id);
-        if ($partner) {
-            $this->respond($partner);
-        } else {
-            $this->respond(['message' => 'Partner not found'], 404);
+        try {
+            $partner = $this->model->find($id);
+            if ($partner) {
+                $this->respond($partner);
+            } else {
+                $this->respond(['message' => 'Partner not found'], 404);
+            }
+        } catch (\Exception $e) {
+            Logger::error("Failed to fetch partner ID $id: " . $e->getMessage());
+            $this->respond(['message' => 'Server error'], 500);
         }
     }
 
     public function store($data) {
-        $this->model->createPartner($data['image']);
-        $this->respond(['message' => 'Partner created'], 201);
+        try {
+            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                $this->respond(['message' => 'Valid image is required'], 422);
+                return;
+            }
+
+            $uploadDir = __DIR__ . '/../../public/uploads/partners/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $filename = time() . '_' . basename($_FILES['image']['name']);
+            $targetFile = $uploadDir . $filename;
+
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
+                throw new \Exception('Failed to upload image');
+            }
+
+            $imagePath = 'uploads/partners/' . $filename;
+
+            $this->model->createPartner($imagePath);
+            Logger::info("Partner created: " . $imagePath);
+
+            $this->respond(['message' => 'Partner created'], 201);
+
+        } catch (\Exception $e) {
+            Logger::error("Failed to create partner: " . $e->getMessage());
+            $this->respond(['message' => 'Server error'], 500);
+        }
     }
 
     public function update($id, $data) {
-        $this->model->update($id, $data);
-        $this->respond(['message' => 'Partner updated']);
+        try {
+            $updateData = [];
+
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = __DIR__ . '/../../public/uploads/partners/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                $filename = time() . '_' . basename($_FILES['image']['name']);
+                $targetFile = $uploadDir . $filename;
+
+                if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
+                    throw new \Exception('Failed to upload image');
+                }
+
+                $updateData['image'] = 'uploads/partners/' . $filename;
+            }
+
+            if ($updateData) {
+                $this->model->update($id, $updateData);
+                Logger::info("Partner updated: ID $id");
+            }
+
+            $this->respond(['message' => 'Partner updated']);
+
+        } catch (\Exception $e) {
+            Logger::error("Failed to update partner ID $id: " . $e->getMessage());
+            $this->respond(['message' => 'Server error'], 500);
+        }
     }
 
     public function delete($id) {
-        $this->model->delete($id);
-        $this->respond(['message' => 'Partner deleted']);
+        try {
+            $this->model->delete($id);
+            Logger::info("Partner deleted: ID $id");
+            $this->respond(['message' => 'Partner deleted']);
+        } catch (\Exception $e) {
+            Logger::error("Failed to delete partner ID $id: " . $e->getMessage());
+            $this->respond(['message' => 'Server error'], 500);
+        }
     }
 }

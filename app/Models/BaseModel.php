@@ -30,14 +30,35 @@ class BaseModel {
         return $stmt->execute(array_values($data));
     }
 
-    public function update($id, array $data) {
-        $fields = implode('=?, ', array_keys($data)) . '=?';
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET $fields WHERE id = ?");
-        return $stmt->execute([...array_values($data), $id]);
+public function update($id, array $data) {
+    if (empty($data)) {
+        return false;
     }
+
+    $setParts = [];
+    $params = [];
+
+    foreach ($data as $key => $value) {
+        $setParts[] = "$key = ?";
+        $params[] = $value;
+    }
+
+    $sql = "UPDATE {$this->table} SET " . implode(', ', $setParts) . " WHERE id = ?";
+    $params[] = $id;
+
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute($params);
+}
+
 
     public function delete($id) {
         $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = ?");
         return $stmt->execute([$id]);
+    }
+
+        public function countAll() {
+        $stmt = $this->db->query("SELECT COUNT(*) as total FROM {$this->table}");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'] ?? 0;
     }
 }

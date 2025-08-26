@@ -7,3 +7,4 @@ define("JWT_SECRET", "mySuperSecretKey");
 define("APP_ENV", "development");
 define("APP_DEBUG", true);
 define("APP_URL", "http://localhost");
+
